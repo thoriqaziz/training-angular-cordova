@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+
+<head>
+    <!--
+        Customize this policy to fit your own app's needs. For more guidance, see:
+            https://github.com/apache/cordova-plugin-whitelist/blob/master/README.md#content-security-policy
+        Some notes:
+            * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
+            * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
+            * Disables use of inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
+                * Enable inline JS: add 'unsafe-inline' to default-src
+        -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;"> -->
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
+    <link rel="stylesheet" type="text/css" href="css/index.css">
+    <title>Hello World</title>
+</head>
+
+<body>
+    <div ng-app="app" ng-view>
+
+    </div>
+    <script type="text/javascript" src="cordova.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js.map"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular-route.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular-route.min.js.map"></script>
+    <script>
+        const baseAPIUrl = 'https://ts-angularjs.herokuapp.com/api'
+
+        const api = {
+            Login(username, password) {
+                return fetch(`${baseAPIUrl}/login`, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        method: 'POST',
+                        body: JSON.stringify({
+                            username
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(json => {
+                        if (json.data != '') {
+                            localStorage.setItem('jwt', json.data)
+                            return true
+                        }
+                        return false
+                    })
+            },
+            TransactionGet() {
+                return fetch(`${baseAPIUrl}/transaction`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                            'Content-Type': 'application/json'
+                        },
+                        method: 'GET'
+                    })
+                    .then(response => response.json())
+                    .then(json => json)
+            },
+            TransactionInsert(transaction_number, transaction_date, details) {
+                return fetch(`${baseAPIUrl}/transaction`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                            'Content-Type': 'application/json'
+                        },
+                        method: 'POST',
+                        body: JSON.stringify({
+                            transaction_number,
+                            transaction_date,
+                            details
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(json => json)
+            },
+
+            TransactionGetDetail(id) {
+                return fetch(`${baseAPIUrl}/transaction/${id}`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                            'Content-Type': 'application/json'
+                        },
+                        method: 'GET'
+                    })
+                    .then(response => response.json())
+                    .then(json => json)
+            },
+        }
+
+        angularapp = angular
+            .module('app', ['ngRoute'])
+            .config(function($routeProvider) {
+                $routeProvider
+                    .when('/', {
+                        templateUrl: 'view/login.html',
+                        controller: 'loginController'
+                    })
+                    .when('/home', {
+                        templateUrl: 'view/home.html',
+                        controller: 'homeController'
+                    })
+                    .when('/transaction/create', {
+                        templateUrl: 'view/transaction-create.html',
+                        controller: 'transactionCreateController'
+                    })
+                    .when('/transaction/view/:id', {
+                        templateUrl: 'view/transaction-view.html',
+                        controller: 'transactionViewController'
+                    })
+                    .otherwise({
+                        templateUrl: 'view/login.html',
+                        controller: 'loginController'
+                    })
+            })
+            .controller('homeController', function($scope, $location) {
+                $scope.transactionList = []
+
+                $scope.init = function() {
+                    api.TransactionGet()
+                        .then(res => {
+                            $scope.transactionList = res.data.map(x => ({
+                                id: x.id,
+                                transaction_number: x.transaction_number,
+                                transaction_date: new Date(x.transaction_date)
+                            }))
+                            $scope.$apply()
+                        })
+                }
+
+                $scope.handleBack = function() {
+                    $location.path('')
+                }
+
+                $scope.handleCreate = function() {
+                    $location.path('transaction/create')
+                }
+
+                $scope.handleView = function(id) {
+                    $location.path('transaction/view/' + id)
+                }
+            })
+            .controller('transactionCreateController', function($scope, $location) {
+                $scope.form = {
+                    transaction_number: '',
+                    transaction_date: new Date(),
+                    details: []
+                }
+                $scope.handleBack = function() {
+                    $location.path('home')
+                }
+
+                $scope.handleSave = function() {
+                    api.TransactionInsert($scope.form.transaction_number, $scope.form.transaction_date, $scope.form.details)
+                        .then(() => {
+                            $location.path('home')
+                            $scope.$apply()
+                        })
+                }
+
+                $scope.handleAdd = function() {
+                    $scope.form.details.push({
+                        product: '',
+                        quantity: null,
+                        price: null
+                    })
+                }
+            })
+            .controller('transactionViewController', function($scope, $location, $routeParams) {
+                $scope.form = {
+                    transaction_number: '',
+                    transaction_date: new Date(),
+                    details: []
+                }
+
+                $scope.init = function() {
+                    api.TransactionGetDetail($routeParams.id)
+                        .then(res => {
+                            $scope.form.transaction_number = res.data.transaction_number
+                            $scope.form.transaction_date = new Date(res.data.transaction_date)
+                            $scope.form.details = res.data.details
+                            $scope.$apply()
+                        })
+                }
+
+                $scope.handleBack = function() {
+                    $location.path('home')
+                }
+            })
+    </script>
+    <script type="text/javascript" src="controllers/login.js"></script>
+</body>
+
+</html>

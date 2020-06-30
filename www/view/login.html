@@ -1,0 +1,12 @@
+<div class="screen">
+    <div>
+        <img src="images/logo.jpg" style="width: 50vw; max-width: 500px;margin-top: 50px;" />
+    </div>
+    <div>
+        <input placeholder="Username" ng-model="form.username" style="margin-top: 50px;" />
+    </div>
+    <div class="loader" ng-if="loading"></div>
+    <div style="margin-top: 50px" ng-if="!loading">
+        <button ng-click="handleLogin()">Login</button>
+    </div>
+</div>

@@ -1,0 +1,12 @@
+<div class="screen" ng-init="init()">
+    <div class="navbar">
+        <img src="images/left.png" ng-click="handleBack()" />
+        <label>Home</label>
+    </div>
+    <div class="content">
+        <div ng-repeat="(index, transaction) in transactionList" ng-click="handleView(transaction.id)">
+            {{ transaction.transaction_number }}
+        </div>
+    </div>
+    <button class="fab" ng-click="handleCreate()">+</button>
+</div>

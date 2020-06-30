@@ -1,0 +1,25 @@
+<div class="screen">
+    <div class="navbar">
+        <img src="images/left.png" ng-click="handleBack()" />
+        <label>Insert transaction</label>
+        <img src="images/save.png" ng-click="handleSave()" />
+    </div>
+    <div class="content">
+        <div>
+            <input type="text" placeholder="Transaction number" ng-model="form.transaction_number" />
+        </div>
+        <div>
+            <input type="date" placeholder="Transaction date" ng-model="form.transaction_date" />
+        </div>
+        <div ng-repeat="(index, detail) in form.details">
+            <div>
+                <input type="text" placeholder="Product" ng-model="detail.product" />
+            </div>
+            <div>
+                <input type="number" placeholder="Quantity" ng-model="detail.quantity" />
+                <input type="number" placeholder="Price" ng-model="detail.price" />
+            </div>
+        </div>
+    </div>
+    <button class="fab" ng-click="handleAdd()">+</button>
+</div>
